@@ -112,14 +112,9 @@ With prefix argument, select from available options."
                                    (selected (completing-read "Select Claude option: " choices nil t)))
                               (when selected
                                 (car (split-string selected " - "))))))
-         (extra-input (when (and selected-option
-                                 (string-match-p "--resume" selected-option))
-                        (read-string "Session ID: ")))
          (vterm-shell (concat claude-code-executable
                               (when selected-option
-                                (concat " " selected-option))
-                              (when extra-input
-                                (concat " " extra-input)))))
+                                (concat " " selected-option)))))
     (with-current-buffer buf
       (unless (eq major-mode 'claude-code-vterm-mode)
         (claude-code-vterm-mode)))
