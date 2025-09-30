@@ -58,6 +58,7 @@
 (declare-function claude-code-send-ctrl-e "claude-code-commands" ())
 (declare-function claude-code-send-shift-tab "claude-code-commands" ())
 (declare-function claude-code-send-ctrl-t "claude-code-commands" ())
+(declare-function claude-code-send-tab "claude-code-commands" ())
 (declare-function claude-code-init "claude-code-commands" ())
 (declare-function claude-code-clear "claude-code-commands" ())
 (declare-function claude-code-help "claude-code-commands" ())
@@ -125,6 +126,7 @@ Minimum value is 0.001 seconds to ensure proper operation."
     (define-key map (kbd "C-c C-o") 'claude-code-send-ctrl-o)
     (define-key map (kbd "C-c C-e") 'claude-code-send-ctrl-e)
     (define-key map (kbd "C-c C-d") 'claude-code-send-ctrl-t) ; d for "display TODOs"
+    (define-key map (kbd "C-c C-h") 'claude-code-send-tab) ; h for "thinking mode"
     (define-key map (kbd "C-c RET") 'claude-code-send-return)
     (define-key map (kbd "C-c TAB") 'claude-code-send-shift-tab)
     (define-key map (kbd "C-c C-t") 'claude-code-transient)
@@ -308,6 +310,7 @@ INPUT is the terminal output string."
     ("o" "Toggle expand (Ctrl+O)" claude-code-send-ctrl-o)
     ("e" "Toggle expand more (Ctrl+E)" claude-code-send-ctrl-e)
     ("t" "Toggle TODO display (Ctrl+T)" claude-code-send-ctrl-t)
+    ("h" "Toggle thinking mode (Tab)" claude-code-send-tab)
     ("a" "Toggle auto accept (Shift+Tab)" claude-code-send-shift-tab)]
    ["Commands"
     ("/" "Slash commands" claude-code-slash-commands-transient)

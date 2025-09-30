@@ -174,6 +174,14 @@
   (claude-code-with-vterm-buffer
    (lambda () (vterm-send-key (kbd "C-t")))))
 
+;;;###autoload
+(defun claude-code-send-tab ()
+  "Send Tab to Claude Code buffer."
+  (interactive)
+  (claude-code-with-vterm-buffer
+   (lambda ()
+     (vterm-send-key "<tab>"))))
+
 ;;; Helper functions for command argument handling
 
 (defun claude-code-count-arguments (template)
