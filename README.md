@@ -58,7 +58,7 @@ Claude Code can directly interact with your Emacs environment:
 | `C-c C-o` | Send Ctrl+O (toggle expand) |
 | `C-c C-e` | Send Ctrl+E (toggle expand more) |
 | `C-c C-d` | Send Ctrl+T (toggle TODO display) |
-| `C-c C-h` | Send Tab (toggle thinking mode) |
+| `C-c C-n` | Send Tab (toggle thinking mode) |
 | `C-c RET` | Send Return key |
 | `C-c TAB` | Send Shift+Tab (toggle auto-accept) |
 | `C-c C-t` | Open transient menu |

@@ -126,7 +126,7 @@ Minimum value is 0.001 seconds to ensure proper operation."
     (define-key map (kbd "C-c C-o") 'claude-code-send-ctrl-o)
     (define-key map (kbd "C-c C-e") 'claude-code-send-ctrl-e)
     (define-key map (kbd "C-c C-d") 'claude-code-send-ctrl-t) ; d for "display TODOs"
-    (define-key map (kbd "C-c C-h") 'claude-code-send-tab) ; h for "thinking mode"
+    (define-key map (kbd "C-c C-n") 'claude-code-send-tab) ; n for "thinking mode"
     (define-key map (kbd "C-c RET") 'claude-code-send-return)
     (define-key map (kbd "C-c TAB") 'claude-code-send-shift-tab)
     (define-key map (kbd "C-c C-t") 'claude-code-transient)
