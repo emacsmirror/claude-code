@@ -19,25 +19,26 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: '22'
         registry-url: 'https://registry.npmjs.org'
-    
+
+    - name: Install latest npm (for OIDC trusted publishing)
+      run: npm install -g npm@latest
+
     - name: Install dependencies
       run: |
         cd mcp-server
         npm ci
-    
+
     - name: Build
       run: |
         cd mcp-server
         npm run build
-    
+
     - name: Publish to npm
       run: |
         cd mcp-server
-        npm publish
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        npm publish --provenance --access public
     
   create-melpa-pr:
     runs-on: ubuntu-latest
