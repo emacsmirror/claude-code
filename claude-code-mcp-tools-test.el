@@ -252,11 +252,17 @@
           (cl-letf (((symbol-function 'projectile-project-root)
                      (lambda () (file-name-directory test-file)))
                     ((symbol-function 'vc-diff)
-                     (lambda (&rest args) t)))
+                     (lambda (&rest _args)
+                       (get-buffer-create "*vc-diff*")
+                       t))
+                    ((symbol-function 'display-buffer)
+                     (lambda (&rest _args) nil)))
             (let ((result (claude-code-mcp-handle-openCurrentChanges params)))
               (should (assoc 'status result))
               (should (equal (cdr (assoc 'status result)) "success")))))
-      (delete-file test-file))))
+      (delete-file test-file)
+      (when-let ((buf (get-buffer "*vc-diff*")))
+        (kill-buffer buf)))))
 
 ;;; Tests for definition finding
 

@@ -37,6 +37,16 @@
 (require 'ediff)
 (require 'alert nil t)  ;; Optional dependency
 
+(defcustom claude-code-mcp-vc-diff-display-action
+  '((display-buffer-reuse-window display-buffer-pop-up-window)
+    (inhibit-same-window . t))
+  "Display action for vc-diff buffer opened by MCP openCurrentChanges tool.
+This controls where the *vc-diff* buffer appears.
+Set to nil to use default `display-buffer' behavior.
+See `display-buffer' for the format of this value."
+  :type 'sexp
+  :group 'claude-code)
+
 ;; LSP function declarations
 (declare-function lsp-diagnostics "lsp-mode" (&optional all-workspaces))
 (declare-function lsp:diagnostic-range "lsp-protocol" (diagnostic))
@@ -232,8 +242,12 @@ Returns project-wide diagnostics using specified buffer for LSP context."
           (unless (file-exists-p target-file)
             (error "File not found: %s" target-file))
           ;; Use vc-diff for showing uncommitted changes
-          (with-current-buffer (find-file-noselect target-file)
-            (vc-diff nil t))
+          ;; Suppress vc-diff's own window management, then display with custom action
+          (save-window-excursion
+            (with-current-buffer (find-file-noselect target-file)
+              (vc-diff nil t)))
+          (when-let ((diff-buf (get-buffer "*vc-diff*")))
+            (display-buffer diff-buf claude-code-mcp-vc-diff-display-action))
           `((status . "success")
             (message . "Showing changes")
             (file . ,(file-name-nondirectory target-file))))
