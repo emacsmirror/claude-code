@@ -21,8 +21,16 @@ jobs:
       with:
         node-version: '22'
 
-    - name: Install latest npm (for OIDC trusted publishing)
-      run: npm install -g npm@latest
+    - name: Activate npm@latest via corepack
+      # `npm install -g npm@latest` is unreliable: it has npm overwrite its
+      # own modules mid-run, which can crash with "Cannot find module
+      # 'promise-retry'" when the bundled npm and the new one disagree on
+      # tree shape. corepack swaps the active manager atomically and avoids
+      # the self-overwrite hazard.
+      run: |
+        corepack enable
+        corepack prepare npm@latest --activate
+        npm --version
 
     - name: Configure npm registry
       run: npm config set registry https://registry.npmjs.org/
