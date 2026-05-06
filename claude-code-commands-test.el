@@ -258,6 +258,7 @@
 
 (ert-deftest test-claude-code-fix-diagnostic ()
   "Test fixing diagnostics using lsp-diagnostics."
+  (skip-unless (featurep 'lsp-mode))
   (with-claude-mock-buffer
    (let ((claude-code-send-string-called nil)
          (claude-code-send-string-arg nil)
@@ -307,6 +308,7 @@
 
 (ert-deftest test-claude-code-fix-diagnostic-no-lsp ()
   "Test fix-diagnostic when LSP is not active."
+  (skip-unless (featurep 'lsp-mode))
   (with-claude-mock-buffer
    (cl-letf (((symbol-function 'lsp-mode) nil)
              ((symbol-value 'lsp-mode) nil))
@@ -314,6 +316,7 @@
 
 (ert-deftest test-claude-code-fix-diagnostic-no-diagnostics ()
   "Test fix-diagnostic when no diagnostics are found."
+  (skip-unless (featurep 'lsp-mode))
   (with-claude-mock-buffer
    (let ((message-called nil)
          (message-arg nil))
