@@ -56,6 +56,7 @@ cursor to be shown there."
 
 (ert-deftest test-claude-code-lsp-integration ()
   "Test LSP mode integration."
+  (skip-unless (featurep 'lsp-mode))
   (let ((lsp-language-id-configuration nil))
     (with-temp-buffer
       (claude-code-prompt-mode)

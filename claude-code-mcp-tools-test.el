@@ -647,6 +647,7 @@
 
 (ert-deftest test-mcp-handle-findReferences-missing-params ()
   "Test finding references with missing parameters."
+  (skip-unless (featurep 'lsp-mode))
   ;; Missing file
   (let ((result (claude-code-mcp-handle-findReferences
                  '((line . 1) (symbol . "test")))))
@@ -711,6 +712,7 @@
 
 (ert-deftest test-mcp-handle-describeSymbol ()
   "Test describing symbol with LSP hover."
+  (skip-unless (featurep 'lsp-mode))
   (let ((test-file (make-temp-file "test-desc" nil ".el")))
     (unwind-protect
         (progn
@@ -789,6 +791,7 @@
 
 (ert-deftest test-mcp-handle-describeSymbol-markdown-format ()
   "Test that MarkedString with language is formatted as markdown code block."
+  (skip-unless (featurep 'lsp-mode))
   (let ((test-file (make-temp-file "test-desc" nil ".el")))
     (unwind-protect
         (progn
