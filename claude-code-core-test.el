@@ -180,5 +180,9 @@
             (should-not (string-match-p "test-session" vterm-shell-value)))
         (kill-buffer test-buffer)))))
 
+(ert-deftest test-claude-code-normalize-project-root ()
+  (should (equal "/foo/bar/baz" (claude-code-normalize-project-root "/foo/bar/baz/")))
+  (should-error (claude-code-normalize-project-root nil) :type 'error))
+
 (provide 'test-claude-code-core)
 ;;; test-claude-code-core.el ends here

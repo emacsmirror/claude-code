@@ -67,14 +67,17 @@
 
 (defun claude-code-normalize-project-root (project-root)
   "Normalize PROJECT-ROOT by removing trailing slash.
-Return nil if PROJECT-ROOT is nil."
-  (when project-root
-    (directory-file-name project-root)))
+Signal a `user-error' if PROJECT-ROOT is nil so callers surface a
+readable message instead of `(wrong-type-argument stringp nil)'."
+  (if project-root
+      (directory-file-name project-root)
+    (user-error "Current directory is not part of a project")))
 
 (defun claude-code-buffer-name ()
   "Return the buffer name for Claude Code session in current project.
-Return nil if not in a project."
-  (when-let ((project-root (claude-code-normalize-project-root (projectile-project-root))))
+Signals a `user-error' via `claude-code-normalize-project-root' when not
+in a project."
+  (let ((project-root (claude-code-normalize-project-root (projectile-project-root))))
     (format "*claude:%s*" project-root)))
 
 (defun claude-code-get-buffer ()

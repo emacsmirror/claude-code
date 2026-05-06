@@ -49,10 +49,10 @@
    (should (string-match-p (regexp-quote temp-dir) (claude-code-buffer-name)))))
 
 (ert-deftest test-claude-code-buffer-name-without-project ()
-  "Test buffer name returns nil when not in a project."
+  "Test buffer name signals a readable error when not in a project."
   ;; Mock projectile-project-root to return nil (not in a project)
   (cl-letf (((symbol-function 'projectile-project-root) (lambda () nil)))
-    (should-not (claude-code-buffer-name))))
+    (should-error (claude-code-buffer-name) :type 'user-error)))
 
 (ert-deftest test-claude-code-switch-to-buffer ()
   "Test switching to Claude Code buffer."
