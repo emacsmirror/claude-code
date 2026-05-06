@@ -29,6 +29,29 @@
     ;; Test display settings
     (should (eq display-line-numbers-mode nil))))
 
+(ert-deftest test-claude-code-vterm-mode-copy-mode-cursor-visibility ()
+  "Test that cursor becomes visible when entering vterm-copy-mode.
+By default, `cursor-type' is set to nil in `claude-code-vterm-mode' to
+reduce flicker since vterm draws its own cursor.  However, vterm stops
+drawing its cursor in `vterm-copy-mode', so we need Emacs' built-in
+cursor to be shown there."
+  (skip-unless (fboundp 'vterm-mode))
+  (with-temp-buffer
+    (claude-code-vterm-mode)
+
+    ;; Initial state: cursor-type should be nil (flicker prevention)
+    (should (eq cursor-type nil))
+
+    ;; Simulate entering vterm-copy-mode: cursor should become visible
+    (setq-local vterm-copy-mode t)
+    (run-hooks 'vterm-copy-mode-hook)
+    (should cursor-type)
+
+    ;; Simulate exiting vterm-copy-mode: cursor-type should return to nil
+    (setq-local vterm-copy-mode nil)
+    (run-hooks 'vterm-copy-mode-hook)
+    (should (eq cursor-type nil))))
+
 ;;; Tests for LSP integration
 
 (ert-deftest test-claude-code-lsp-integration ()

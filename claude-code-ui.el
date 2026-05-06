@@ -34,6 +34,7 @@
 (require 'markdown-mode)
 
 (declare-function vterm-mode "vterm" ())
+(defvar vterm-copy-mode)
 
 ;; Forward declarations
 (declare-function claude-code-run "claude-code-core" ())
@@ -219,6 +220,14 @@ INPUT is the terminal output string."
   (hl-line-mode -1)
   (display-line-numbers-mode -1)
   (face-remap-add-relative 'nobreak-space '(:underline nil))
+  ;; Restore Emacs' built-in cursor in `vterm-copy-mode'.  We disable
+  ;; `cursor-type' above to reduce flicker since vterm draws its own
+  ;; cursor, but vterm stops drawing it in copy-mode -- without this
+  ;; hook, the cursor would be invisible while copying text.
+  (add-hook 'vterm-copy-mode-hook
+            (lambda ()
+              (setq-local cursor-type (when vterm-copy-mode t)))
+            nil t)
   ;; Clean up timer on buffer kill
   (add-hook 'kill-buffer-hook #'claude-code--vterm-cleanup-multiline-timer nil t)
 
