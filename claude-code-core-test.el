@@ -144,8 +144,6 @@
   (with-claude-test-project
     (let* ((buffer-created nil)
            (vterm-shell-value nil)
-           (read-string-called nil)
-           (session-id "test-session-123")
            (vterm-mode-called nil)
            (test-buffer (generate-new-buffer "*test-buffer*")))
       (unwind-protect
@@ -171,19 +169,15 @@
                      ((symbol-function 'completing-read)
                       (lambda (prompt choices &rest _)
                         "--resume - Resume specific session by ID"))
-                     ((symbol-function 'read-string)
-                      (lambda (prompt)
-                        (setq read-string-called t)
-                        session-id))
                      (current-prefix-arg t))
-            ;; Test run with resume option
+            ;; Test run with resume option (no session ID prompt)
             (claude-code-run)
             (should buffer-created)
-            (should read-string-called)
             (should vterm-mode-called)
-            ;; Check that vterm-shell includes the resume option and session ID
+            ;; Check that vterm-shell includes the resume option only
             (should (string-match-p "--resume" vterm-shell-value))
-            (should (string-match-p session-id vterm-shell-value)))
+            ;; Session ID should not be in the command (claude handles it automatically)
+            (should-not (string-match-p "test-session" vterm-shell-value)))
         (kill-buffer test-buffer)))))
 
 (ert-deftest test-claude-code-normalize-project-root ()

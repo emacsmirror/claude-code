@@ -4,47 +4,9 @@ Use English for commit, code comment, pull request.
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Notification Policy
-
-When completing tasks that take more than a few seconds, use the `sendNotification` MCP tool to notify the user:
-- After successful completion of builds, tests, or other long-running operations
-- When all requested tasks have been completed
-- When encountering errors that require user attention
-- After fixing multiple issues or making multiple file changes
-
-Examples of when to send notifications:
-```
-# After running tests
-sendNotification(title: "Tests Complete", message: "All 94 tests passed successfully!")
-
-# After implementing a feature
-sendNotification(title: "Feature Complete", message: "User authentication feature implemented and tested")
-
-# After fixing errors
-sendNotification(title: "Errors Fixed", message: "Fixed 5 TypeScript errors in the codebase")
-
-# When task requires user action
-sendNotification(title: "Action Required", message: "Please review the pull request before merging")
-```
-
-Note: The notification will appear according to the user's Emacs alert configuration (popup, notification center, etc.)
-
 ## Project Overview
 
 This is an Emacs package that provides integration with Claude Code CLI. The package allows running Claude Code sessions within Emacs using vterm mode, with each project getting its own isolated session. Additionally, it includes an MCP (Model Context Protocol) server that enables Claude Code to interact directly with the Emacs environment.
-
-## Package Structure
-
-The package is modularized into several components:
-- **claude-code.el** - Main entry point
-- **claude-code-core.el** - Core functionality, utilities, and session management
-- **claude-code-buffer.el** - Buffer naming and string processing
-- **claude-code-commands.el** - Command execution and slash commands
-- **claude-code-ui.el** - Transient menu interfaces
-- **claude-code-prompt.el** - Prompt file management and mode
-- **claude-code-mcp.el** - MCP WebSocket client integration
-- **claude-code-mcp-*.el** - MCP protocol implementation
-- **claude-code-mcp-events.el** - Real-time event notifications
 
 ## Development Commands
 
@@ -85,19 +47,6 @@ make mcp-build
 
 # Start MCP server in development mode (with hot-reload)
 make mcp-dev
-```
-
-### Linting and Type Checking
-When completing tasks, run these commands to ensure code quality:
-```bash
-# For Emacs Lisp files, byte-compilation serves as linting
-make compile
-
-# For TypeScript files in MCP server
-cd mcp-server && npm run build
-
-# Run all tests to ensure functionality
-make test
 ```
 
 ## Key Files and Entry Points
@@ -162,9 +111,7 @@ This generates functions like `claude-code-init` that send `/init`.
 
 ### File Path Completion System
 The `@` symbol triggers project file completion:
-- `claude-code-get-buffer-paths()` - Lists all open project files
-- `claude-code-at-sign-complete()` - Interactive completion
-- Project root is replaced with `@` for brevity
+- `claude-code-at-sign-complete()` - Interactive completion using `projectile-project-files`
 - Handles cases where `@` is already typed to avoid duplication
 
 ### Mode Architecture
@@ -265,23 +212,7 @@ The MCP server provides a bridge between Claude Code and Emacs:
 **Important**: Claude Code must be configured with the MCP server (see Setup section) for the features to work.
 
 ### Setup
-Claude Code needs to be configured to use the MCP server:
-
-1. First build the MCP server:
-   ```bash
-   make mcp-build
-   ```
-
-2. Configure Claude Code:
-   ```bash
-   claude mcp add-json emacs '{
-     "type": "stdio",
-     "command": "node",
-     "args": ["/path/to/claude-code/mcp-server/dist/index.js"]
-   }'
-   ```
-
-3. The connection is activated automatically when you start Claude Code
+See [README.md Installation Details](README.md#installation-details) for MCP server setup options (global install, npx, or build from source).
 
 ### Logging
 The MCP server logs to a file for debugging purposes:
@@ -289,7 +220,6 @@ The MCP server logs to a file for debugging purposes:
 - Logs include timestamps, connection status, and request/response details
 - Event notifications are logged with full parameters
 - Useful for troubleshooting MCP integration issues
-- Previous log location (`/tmp/claude-code-mcp.log`) is no longer used
 
 ### Development
 When working on the MCP server:
@@ -299,135 +229,7 @@ When working on the MCP server:
 4. The server auto-starts when Claude Code requests MCP tools
 5. For development with hot-reload: `make mcp-dev`
 
-### MCP Communication Flow
-1. Claude Code connects to MCP server via stdio
-2. MCP server establishes WebSocket connection to Emacs (dynamic port)
-3. MCP tools translate requests into Emacs Lisp commands
-4. Results are sent back through the same chain
-5. Real-time events flow from Emacs to Claude Code via notifications
-
-### Connection Health Monitoring
-The MCP connection includes automatic health monitoring:
-- **Ping/Pong mechanism**: Emacs sends ping messages every 30 seconds (configurable via `claude-code-mcp-ping-interval`)
-- **Timeout detection**: If no pong is received within 10 seconds (configurable via `claude-code-mcp-ping-timeout`), the connection is considered lost
-- **Session persistence**: Each project maintains its own WebSocket connection for isolation
-
 ### Event Notification System
-The MCP server supports real-time notifications from Emacs:
-
-#### Architecture
-- **Emacs side**: `claude-code-mcp-events.el` hooks into Emacs events
-  - `buffer-list-update-hook`: Monitors buffer state changes
-  - `after-change-functions`: Tracks buffer content modifications
-  - `lsp-diagnostics-updated-hook`: Watches LSP diagnostic updates
-- **Bridge layer**: EmacsBridge forwards notifications via WebSocket
-  - `handleNotification()` processes incoming events from Emacs
-  - `setNotificationHandler()` registers callback for event handling
-- **MCP server**: Forwards notifications to Claude Code via stdio
-  - Notifications are sent as JSON-RPC 2.0 notification messages
-  - Method names follow the `emacs/` namespace convention
-
-#### Event Types
-- **Buffer list updates** (`emacs/bufferListUpdated`): Tracks when buffers are opened, closed, or modified
-  - Includes buffer metadata: path, name, active/modified status
-  - Filtered by project to prevent cross-project noise
-- **Content changes** (`emacs/bufferContentModified`): Monitors file modifications with line-level granularity
-  - Multiple changes are batched into a single notification per project
-  - Format: `{ "changes": [{ "file": "...", "startLine": ..., "endLine": ..., "changeLength": ... }, ...] }`
-  - Overlapping changes are automatically merged to reduce redundancy
-- **Diagnostics updates** (`emacs/diagnosticsChanged`): Forwards LSP diagnostics changes as they occur
-  - All file diagnostics for a project are sent in one notification
-  - Format: `{ "files": [{ "file": "...", "diagnostics": [...] }, ...] }`
-  - Severity levels are translated from LSP numeric codes to strings
-
-#### Performance Optimizations
-- **Efficient debouncing**: Prevents excessive notifications during rapid changes
-  - Configurable delays via `claude-code-mcp-events-*-delay` variables
-  - Timers are cancelled and reset on each new event
-- **Multi-project support**: Each project connection receives only relevant events
-  - Project root is stored with change data to avoid repeated file operations
-  - Hash table lookup ensures O(1) routing performance
-- **Batch optimization**: Changes and diagnostics are grouped per project to reduce network overhead
-  - Changes to the same file region are merged automatically
-  - All diagnostics for a project are sent in a single notification
-
-#### Implementation Details
-- **Change tracking**: Uses alist to store pending changes with project root information
-- **Timer management**: Separate timers for each event type to allow independent debouncing
-- **Error resilience**: All event handlers use `condition-case` to prevent errors from disrupting Emacs
-- **Hook management**: `claude-code-mcp-events-enable/disable` functions for runtime control
-
-### Known Issues and Solutions
-- **WebSocket 400 error**: Fixed by ensuring the WebSocket URL includes a leading slash (e.g., `ws://localhost:port/?session=...`)
-- **Connection timing**: WebSocket connections are established asynchronously; the `on-open` callback is used to ensure proper initialization
-- **Timer management**: Ping timers are properly cleaned up on disconnect to prevent resource leaks
-
-### Recent Changes
-- **Version 0.3.1**: 
-  - Changed toggle expand key binding from `R` to `r` in transient menu for better ergonomics
-  - Simplified release process by removing automated version updates
-- **Tool removal**: 
-  - Removed `openFile` and `runCommand` MCP tools as they were redundant
-  - Removed `openDiff3` (three-way diff) and `applyPatch` tools due to limited practical use
-- **Tool renaming**: `openDiff` renamed to `openDiffFile` for clarity
-- **@ completion fix**: Fixed double `@` insertion in file completion when user already typed `@`
-- **getDiagnostics enhancement**: 
-  - Added required `buffer` parameter for LSP workspace context
-  - Improved error handling to log errors instead of suppressing them
-  - Clarified that buffer is for LSP context, not filtering (returns project-wide diagnostics)
-- **getDefinition tool**: Added MCP tool to find symbol definitions using LSP with preview (shows 3 lines before/after)
-- **Diff tools suite**: Added comprehensive ediff integration tools:
-  - `openDiffFile`: Compare two files
-  - `openRevisionDiff`: Compare file with any git revision
-  - `openCurrentChanges`: Show uncommitted changes in ediff
-  - `openDiffContent`: Compare two text contents in temporary buffers
-- **Interactive claude-code-run**: Added prefix argument support (`C-u`) for interactive option selection (model, verbose, resume, etc.)
-- **CI/CD**: Added GitHub Actions workflow for automated testing
-- **MCP Resources**: Added support for MCP resources (buffer content, project info, diagnostics)
-- **Enhanced logging**: MCP server now logs to project root (`.claude-code-mcp.log`)
-- **Shift+Tab support**: Added `claude-code-send-shift-tab` to toggle auto accept
-- **Function rename**: `claude-code-send-buffer-or-region` → `claude-code-send-region`
-- **Module consolidation**: Session management moved from separate module into core.el
-- **findReferences tool**: Added MCP tool to find all references to a symbol using LSP with proper 1-based column numbering
-- **describeSymbol tool**: Added MCP tool to get symbol documentation using LSP hover with Markdown code block formatting for MarkedString responses
-- **Real-time event notifications**: Added comprehensive event notification system for Emacs state changes
-- **Fix LSP Diagnostic feature**: Added `claude-code-fix-diagnostic` function to select and fix LSP diagnostics
-  - Shows all project diagnostics sorted by severity
-  - Sends formatted fix request to Claude Code
-  - Accessible via `f` in transient menu or `M-x claude-code-fix-diagnostic`
-  - Requires `lsp-mode` to be active
-- **Standard Emacs key bindings**: Added dedicated keymap for `claude-code-vterm-mode`
-  - `C-c C-q`: Close Claude Code window
-  - `C-c C-k`: Send Escape key
-  - `C-c C-r`: Send Ctrl+R (toggle expand)
-  - `C-c C-e`: Send Ctrl+E (toggle expand more)
-  - `C-c RET`: Send Return key
-  - `C-c TAB`: Send Shift+Tab (toggle auto-accept)
-  - `C-c C-t`: Open transient menu
-  - Removed evil-collection dependency for better accessibility
-- **vterm-send-string timing**: Added wait time after `vterm-send-string` to ensure proper processing
-  - Waits for 3x `vterm-timer-delay` after sending strings
-- **Prompt file improvements**: 
-  - Automatically positions cursor at end of file when opened
-  - Updated initial content with more compact examples
-  - Added key bindings documentation in template
-- **Release workflow enhancement**: 
-  - Added `--verify-tag` to ensure tags are pushed before creating releases
-  - Simplified release notes generation with `--generate-notes`
-  - Ensures `accept-process-output` completion before sending return key
-- **Ctrl+E command**: Added `claude-code-send-ctrl-e` function
-  - Send Ctrl+E to toggle expand more
-- **UI cleanup**: Removed redundant functions
-  - Removed `claude-code-insert-file-path` and `claude-code-insert-open-buffer-paths` from UI module
-  - Cleaned up prompt mode keymap and transient menus
-  - Removed unused buffer path functions from buffer module:
-    - `claude-code-get-buffer-paths`
-    - `claude-code-format-buffer-path`
-    - `claude-code-insert-file-path`
-    - `claude-code-insert-open-buffer-paths`
-  - Removed duplicate implementations in UI module
-  - Bound to `C-c C-e` in vterm mode
-  - Available as `e` in transient menu
-- **Improved key bindings**:
-  - Changed Escape from `C-c C-e` to `C-c C-k` (avoid reserved key)
-  - Fixed transient menu key conflict (Clear moved to `k`)
+The MCP server supports real-time event notifications from Emacs to Claude Code.
+Events include buffer list updates, content changes, and LSP diagnostics updates.
+See `claude-code-mcp-events.el` for implementation details.

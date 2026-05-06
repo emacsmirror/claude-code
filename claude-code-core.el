@@ -66,12 +66,17 @@
 ;;; Buffer Management
 
 (defun claude-code-normalize-project-root (project-root)
-  "Normalize PROJECT-ROOT by removing trailing slash."
+  "Normalize PROJECT-ROOT by removing trailing slash.
+Signal a `user-error' if PROJECT-ROOT is nil so callers surface a
+readable message instead of `(wrong-type-argument stringp nil)'."
   (if project-root
       (directory-file-name project-root)
-    (error "Current directory is not part of a project")))
+    (user-error "Current directory is not part of a project")))
+
 (defun claude-code-buffer-name ()
-  "Return the buffer name for Claude Code session in current project."
+  "Return the buffer name for Claude Code session in current project.
+Signals a `user-error' via `claude-code-normalize-project-root' when not
+in a project."
   (let ((project-root (claude-code-normalize-project-root (projectile-project-root))))
     (format "*claude:%s*" project-root)))
 
@@ -110,14 +115,9 @@ With prefix argument, select from available options."
                                    (selected (completing-read "Select Claude option: " choices nil t)))
                               (when selected
                                 (car (split-string selected " - "))))))
-         (extra-input (when (and selected-option
-                                 (string-match-p "--resume" selected-option))
-                        (read-string "Session ID: ")))
          (vterm-shell (concat claude-code-executable
                               (when selected-option
-                                (concat " " selected-option))
-                              (when extra-input
-                                (concat " " extra-input)))))
+                                (concat " " selected-option)))))
     (with-current-buffer buf
       (unless (eq major-mode 'claude-code-vterm-mode)
         (claude-code-vterm-mode)))

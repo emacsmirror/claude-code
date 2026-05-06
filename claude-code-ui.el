@@ -34,6 +34,7 @@
 (require 'markdown-mode)
 
 (declare-function vterm-mode "vterm" ())
+(defvar vterm-copy-mode)
 
 ;; Forward declarations
 (declare-function claude-code-run "claude-code-core" ())
@@ -53,9 +54,12 @@
 (declare-function claude-code-send-push "claude-code-commands" ())
 (declare-function claude-code-send-escape "claude-code-commands" ())
 (declare-function claude-code-send-return "claude-code-commands" ())
+(declare-function claude-code-send-ctrl-o "claude-code-commands" ())
 (declare-function claude-code-send-ctrl-r "claude-code-commands" ())
 (declare-function claude-code-send-ctrl-e "claude-code-commands" ())
 (declare-function claude-code-send-shift-tab "claude-code-commands" ())
+(declare-function claude-code-send-ctrl-t "claude-code-commands" ())
+(declare-function claude-code-send-tab "claude-code-commands" ())
 (declare-function claude-code-init "claude-code-commands" ())
 (declare-function claude-code-clear "claude-code-commands" ())
 (declare-function claude-code-help "claude-code-commands" ())
@@ -120,8 +124,10 @@ Minimum value is 0.001 seconds to ensure proper operation."
     ;; Standard Emacs key bindings
     (define-key map (kbd "C-c C-q") 'claude-code-close)
     (define-key map (kbd "C-c C-k") 'claude-code-send-escape)
-    (define-key map (kbd "C-c C-r") 'claude-code-send-ctrl-r)
+    (define-key map (kbd "C-c C-o") 'claude-code-send-ctrl-o)
     (define-key map (kbd "C-c C-e") 'claude-code-send-ctrl-e)
+    (define-key map (kbd "C-c C-d") 'claude-code-send-ctrl-t) ; d for "display TODOs"
+    (define-key map (kbd "C-c C-n") 'claude-code-send-tab) ; n for "thinking mode"
     (define-key map (kbd "C-c RET") 'claude-code-send-return)
     (define-key map (kbd "C-c TAB") 'claude-code-send-shift-tab)
     (define-key map (kbd "C-c C-t") 'claude-code-transient)
@@ -150,7 +156,8 @@ indicate cursor positioning and line clearing operations.
 ORIG-FUN is the original vterm--filter function.
 PROCESS is the vterm process.
 INPUT is the terminal output string."
-  (if (or (not claude-code-vterm-buffer-multiline-output)
+  (if (or (not (stringp input))
+          (not claude-code-vterm-buffer-multiline-output)
           (not (equal (claude-code-buffer-name)
                       (buffer-name (process-buffer process)))))
       ;; Feature disabled or not a Claude buffer, pass through normally
@@ -195,7 +202,7 @@ INPUT is the terminal output string."
                                                    (funcall orig-fun proc data)
                                                  (error
                                                   (message "Error in vterm filter: %s" err))))))))))
-                                 (current-buffer))))
+                                 (process-buffer process))))
           ;; Not multi-line redraw, process normally
           (funcall orig-fun process input))))))
 
@@ -213,6 +220,14 @@ INPUT is the terminal output string."
   (hl-line-mode -1)
   (display-line-numbers-mode -1)
   (face-remap-add-relative 'nobreak-space '(:underline nil))
+  ;; Restore Emacs' built-in cursor in `vterm-copy-mode'.  We disable
+  ;; `cursor-type' above to reduce flicker since vterm draws its own
+  ;; cursor, but vterm stops drawing it in copy-mode -- without this
+  ;; hook, the cursor would be invisible while copying text.
+  (add-hook 'vterm-copy-mode-hook
+            (lambda ()
+              (setq-local cursor-type (when vterm-copy-mode t)))
+            nil t)
   ;; Clean up timer on buffer kill
   (add-hook 'kill-buffer-hook #'claude-code--vterm-cleanup-multiline-timer nil t)
 
@@ -221,7 +236,12 @@ INPUT is the terminal output string."
     (set-process-filter
      proc
      (lambda (process input)
-       (claude-code--vterm-multiline-buffer-filter orig-fun process input)))))
+       (condition-case err
+           (claude-code--vterm-multiline-buffer-filter orig-fun process input)
+         (error
+          (message "Error in Claude Code vterm filter: %s" err)
+          ;; Pass through the input even if there's an error to avoid breaking the terminal
+          (funcall orig-fun process input)))))))
 
 (defvar claude-code-prompt-mode-map
   (let ((map (make-sparse-keymap)))
@@ -296,8 +316,10 @@ INPUT is the terminal output string."
     ("3" "Send 3" claude-code-send-3)
     ("k" "Send Escape" claude-code-send-escape)
     ("m" "Send Return" claude-code-send-return)
-    ("r" "Toggle expand (Ctrl+R)" claude-code-send-ctrl-r)
+    ("o" "Toggle expand (Ctrl+O)" claude-code-send-ctrl-o)
     ("e" "Toggle expand more (Ctrl+E)" claude-code-send-ctrl-e)
+    ("t" "Toggle TODO display (Ctrl+T)" claude-code-send-ctrl-t)
+    ("h" "Toggle thinking mode (Tab)" claude-code-send-tab)
     ("a" "Toggle auto accept (Shift+Tab)" claude-code-send-shift-tab)]
    ["Commands"
     ("/" "Slash commands" claude-code-slash-commands-transient)
@@ -351,7 +373,7 @@ INPUT is the terminal output string."
     ("r" "Insert region and path" claude-code-insert-region-path-to-prompt)
     ("i" "Insert current file path" claude-code-insert-current-file-path-to-prompt)]
    ["To Session Buffer"
-    ("I" "Insert current file path to session" claude-code-insert-current-file-path-to-session)]])
+    ("s" "Insert current file path to session" claude-code-insert-current-file-path-to-session)]])
 
 (transient-define-prefix claude-code-prompt-transient ()
   "Claude Code prompt buffer menu."

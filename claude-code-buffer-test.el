@@ -48,6 +48,12 @@
    (should (string-match-p "\\*claude:.*\\*" (claude-code-buffer-name)))
    (should (string-match-p (regexp-quote temp-dir) (claude-code-buffer-name)))))
 
+(ert-deftest test-claude-code-buffer-name-without-project ()
+  "Test buffer name signals a readable error when not in a project."
+  ;; Mock projectile-project-root to return nil (not in a project)
+  (cl-letf (((symbol-function 'projectile-project-root) (lambda () nil)))
+    (should-error (claude-code-buffer-name) :type 'user-error)))
+
 (ert-deftest test-claude-code-switch-to-buffer ()
   "Test switching to Claude Code buffer."
   (with-claude-mock-buffer
@@ -87,19 +93,19 @@
   "Test special key sending functions."
   (cl-letf* ((escape-sent nil)
              (return-sent nil)
-             (ctrl-r-sent nil)
+             (ctrl-o-sent nil)
              ((symbol-function 'vterm-send-escape)
               (lambda () (setq escape-sent t)))
              ((symbol-function 'vterm-send-return)
               (lambda () (setq return-sent t)))
              ((symbol-function 'vterm-send-key)
               (lambda (key &optional shift)
-                ;; Check if the key is Ctrl-R (character code 18)
-                (when (and (stringp key) (= (aref key 0) ?\C-r))
-                  (setq ctrl-r-sent t))))
+                ;; Check if the key is Ctrl-O (character code 15)
+                (when (and (stringp key) (= (aref key 0) ?\C-o))
+                  (setq ctrl-o-sent t))))
              ((symbol-function 'kbd)
               (lambda (key-string)
-                (cond ((string= key-string "C-r") "\C-r")
+                (cond ((string= key-string "C-o") "\C-o")
                       ((string= key-string "<backtab>") "<backtab>")
                       (t key-string)))))
 
@@ -112,9 +118,9 @@
      (claude-code-send-return)
      (should return-sent)
 
-     ;; Test ctrl-r sending
-     (claude-code-send-ctrl-r)
-     (should ctrl-r-sent))))
+     ;; Test ctrl-o sending
+     (claude-code-send-ctrl-o)
+     (should ctrl-o-sent))))
 
 ;;; Tests for quick send functions
 

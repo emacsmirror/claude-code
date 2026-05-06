@@ -252,11 +252,17 @@
           (cl-letf (((symbol-function 'projectile-project-root)
                      (lambda () (file-name-directory test-file)))
                     ((symbol-function 'vc-diff)
-                     (lambda (&rest args) t)))
+                     (lambda (&rest _args)
+                       (get-buffer-create "*vc-diff*")
+                       t))
+                    ((symbol-function 'display-buffer)
+                     (lambda (&rest _args) nil)))
             (let ((result (claude-code-mcp-handle-openCurrentChanges params)))
               (should (assoc 'status result))
               (should (equal (cdr (assoc 'status result)) "success")))))
-      (delete-file test-file))))
+      (delete-file test-file)
+      (when-let ((buf (get-buffer "*vc-diff*")))
+        (kill-buffer buf)))))
 
 ;;; Tests for definition finding
 
@@ -641,6 +647,7 @@
 
 (ert-deftest test-mcp-handle-findReferences-missing-params ()
   "Test finding references with missing parameters."
+  (skip-unless (featurep 'lsp-mode))
   ;; Missing file
   (let ((result (claude-code-mcp-handle-findReferences
                  '((line . 1) (symbol . "test")))))
@@ -705,6 +712,7 @@
 
 (ert-deftest test-mcp-handle-describeSymbol ()
   "Test describing symbol with LSP hover."
+  (skip-unless (featurep 'lsp-mode))
   (let ((test-file (make-temp-file "test-desc" nil ".el")))
     (unwind-protect
         (progn
@@ -783,6 +791,7 @@
 
 (ert-deftest test-mcp-handle-describeSymbol-markdown-format ()
   "Test that MarkedString with language is formatted as markdown code block."
+  (skip-unless (featurep 'lsp-mode))
   (let ((test-file (make-temp-file "test-desc" nil ".el")))
     (unwind-protect
         (progn

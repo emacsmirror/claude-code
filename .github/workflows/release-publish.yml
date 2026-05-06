@@ -17,27 +17,36 @@ jobs:
         ref: ${{ github.event.release.tag_name }}
     
     - name: Setup Node.js
+      # Node.js 24 ships with npm 11.x, which is the minimum for OIDC
+      # trusted publishing. Earlier attempts on Node.js 22 needed a
+      # separate npm upgrade step that kept failing -- corepack does not
+      # actually manage npm (it's bundled with Node.js), and the
+      # self-upgrade form (`npm install -g npm@latest') crashes with
+      # `Cannot find module 'promise-retry''.
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
-        registry-url: 'https://registry.npmjs.org'
-    
+        node-version: '24'
+
+    - name: Show npm version
+      run: npm --version
+
+    - name: Configure npm registry
+      run: npm config set registry https://registry.npmjs.org/
+
     - name: Install dependencies
       run: |
         cd mcp-server
         npm ci
-    
+
     - name: Build
       run: |
         cd mcp-server
         npm run build
-    
+
     - name: Publish to npm
       run: |
         cd mcp-server
-        npm publish
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        npm publish --provenance --access public
     
   create-melpa-pr:
     runs-on: ubuntu-latest

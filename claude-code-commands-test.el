@@ -89,9 +89,21 @@
        (claude-code-send-return)
        (should (member 'return keys-sent))
 
+       (claude-code-send-ctrl-o)
+       ;; Test Ctrl+O sending
+       (should (member '(key "\C-o" shift nil) keys-sent))
+
+       ;; Test backward compatibility (ctrl-r calls ctrl-o)
        (claude-code-send-ctrl-r)
-       ;; kbd actually returns "\C-r" (ASCII 22)
-       (should (member '(key "\C-r" shift nil) keys-sent))
+       (should (member '(key "\C-o" shift nil) keys-sent))
+
+       (claude-code-send-ctrl-e)
+       ;; Test Ctrl+E sending
+       (should (member '(key "\C-e" shift nil) keys-sent))
+
+       (claude-code-send-ctrl-t)
+       ;; Test Ctrl+T sending
+       (should (member '(key "\C-t" shift nil) keys-sent))
 
        ;; Test shift-tab sending
        (claude-code-send-shift-tab)
@@ -192,18 +204,16 @@
        (with-temp-file (expand-file-name "multi-arg.md" commands-dir)
          (insert "Command with $ARGUMENTS and $ARGUMENTS"))
 
-       ;; Mock user input
+       ;; Mock user input - now only prompts once for single argument
        (cl-letf (((symbol-function 'completing-read)
                   (lambda (&rest _) "project:multi-arg"))
                  ((symbol-function 'read-string)
-                  (let ((counter 0))
-                    (lambda (&rest _)
-                      (setq counter (1+ counter))
-                      (format "arg%d" counter)))))
+                  (lambda (&rest _) "arg1")))
 
          (claude-code-execute-custom-command)
          (should claude-code-send-string-called)
-         (should (equal "/multi-arg arg1 arg2" claude-code-send-string-arg)))))))
+         ;; Now only sends one argument even if template has multiple $ARGUMENTS
+         (should (equal "/multi-arg arg1" claude-code-send-string-arg)))))))
 
 
 ;;; Tests for unified command execution
@@ -248,6 +258,7 @@
 
 (ert-deftest test-claude-code-fix-diagnostic ()
   "Test fixing diagnostics using lsp-diagnostics."
+  (skip-unless (featurep 'lsp-mode))
   (with-claude-mock-buffer
    (let ((claude-code-send-string-called nil)
          (claude-code-send-string-arg nil)
@@ -297,6 +308,7 @@
 
 (ert-deftest test-claude-code-fix-diagnostic-no-lsp ()
   "Test fix-diagnostic when LSP is not active."
+  (skip-unless (featurep 'lsp-mode))
   (with-claude-mock-buffer
    (cl-letf (((symbol-function 'lsp-mode) nil)
              ((symbol-value 'lsp-mode) nil))
@@ -304,6 +316,7 @@
 
 (ert-deftest test-claude-code-fix-diagnostic-no-diagnostics ()
   "Test fix-diagnostic when no diagnostics are found."
+  (skip-unless (featurep 'lsp-mode))
   (with-claude-mock-buffer
    (let ((message-called nil)
          (message-arg nil))
