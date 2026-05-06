@@ -21,15 +21,17 @@ jobs:
       with:
         node-version: '22'
 
-    - name: Activate npm@latest via corepack
-      # `npm install -g npm@latest` is unreliable: it has npm overwrite its
-      # own modules mid-run, which can crash with "Cannot find module
-      # 'promise-retry'" when the bundled npm and the new one disagree on
-      # tree shape. corepack swaps the active manager atomically and avoids
-      # the self-overwrite hazard.
+    - name: Activate npm 11 via corepack (required for OIDC publishing)
+      # OIDC trusted publishing needs npm >= 11.5.1.
+      # We don't use `npm install -g npm@latest` because it has npm overwrite
+      # its own modules mid-run and can crash with "Cannot find module
+      # 'promise-retry'".
+      # We don't use `corepack prepare npm@latest` because the `latest` tag
+      # resolved through corepack on this runner returned npm 10.9.7, which
+      # is too old for OIDC. Pin to an explicit OIDC-capable version instead.
       run: |
         corepack enable
-        corepack prepare npm@latest --activate
+        corepack prepare npm@11.6.0 --activate
         npm --version
 
     - name: Configure npm registry
