@@ -17,22 +17,18 @@ jobs:
         ref: ${{ github.event.release.tag_name }}
     
     - name: Setup Node.js
+      # Node.js 24 ships with npm 11.x, which is the minimum for OIDC
+      # trusted publishing. Earlier attempts on Node.js 22 needed a
+      # separate npm upgrade step that kept failing -- corepack does not
+      # actually manage npm (it's bundled with Node.js), and the
+      # self-upgrade form (`npm install -g npm@latest') crashes with
+      # `Cannot find module 'promise-retry''.
       uses: actions/setup-node@v4
       with:
-        node-version: '22'
+        node-version: '24'
 
-    - name: Activate npm 11 via corepack (required for OIDC publishing)
-      # OIDC trusted publishing needs npm >= 11.5.1.
-      # We don't use `npm install -g npm@latest` because it has npm overwrite
-      # its own modules mid-run and can crash with "Cannot find module
-      # 'promise-retry'".
-      # We don't use `corepack prepare npm@latest` because the `latest` tag
-      # resolved through corepack on this runner returned npm 10.9.7, which
-      # is too old for OIDC. Pin to an explicit OIDC-capable version instead.
-      run: |
-        corepack enable
-        corepack prepare npm@11.6.0 --activate
-        npm --version
+    - name: Show npm version
+      run: npm --version
 
     - name: Configure npm registry
       run: npm config set registry https://registry.npmjs.org/
