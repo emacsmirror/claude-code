@@ -23,7 +23,7 @@ jobs:
       # actually manage npm (it's bundled with Node.js), and the
       # self-upgrade form (`npm install -g npm@latest') crashes with
       # `Cannot find module 'promise-retry''.
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version: '24'
 
