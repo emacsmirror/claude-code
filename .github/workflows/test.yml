@@ -15,7 +15,7 @@ jobs:
           - 'snapshot'
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Set up Emacs
       uses: purcell/setup-emacs@master
@@ -28,7 +28,7 @@ jobs:
         sudo apt-get install -y libtool-bin
 
     - name: Cache Emacs packages
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       id: cache-emacs-packages
       with:
         path: |
@@ -67,7 +67,7 @@ jobs:
 
     - name: Upload test results
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: test-results-emacs-${{ matrix.emacs-version }}
         path: |

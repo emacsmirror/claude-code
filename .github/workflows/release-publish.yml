@@ -12,7 +12,7 @@ jobs:
       id-token: write
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         ref: ${{ github.event.release.tag_name }}
     
@@ -52,7 +52,7 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         ref: ${{ github.event.release.tag_name }}
     
@@ -70,7 +70,7 @@ jobs:
         cat claude-code-emacs-recipe.el
     
     - name: Upload MELPA recipe
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: melpa-recipe
         path: claude-code-emacs-recipe.el
