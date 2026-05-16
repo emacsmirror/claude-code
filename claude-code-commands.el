@@ -70,6 +70,7 @@
 (claude-code-define-slash-command "init" "/init")
 (claude-code-define-slash-command "clear" "/clear")
 (claude-code-define-slash-command "help" "/help")
+(claude-code-define-slash-command "plan" "/plan")
 (claude-code-define-slash-command "memory" "/memory")
 (claude-code-define-slash-command "config" "/config")
 (claude-code-define-slash-command "cost" "/cost")

@@ -63,6 +63,7 @@
 (declare-function claude-code-init "claude-code-commands" ())
 (declare-function claude-code-clear "claude-code-commands" ())
 (declare-function claude-code-help "claude-code-commands" ())
+(declare-function claude-code-plan "claude-code-commands" ())
 (declare-function claude-code-execute-custom-command "claude-code-commands" ())
 (declare-function claude-code-memory "claude-code-commands" ())
 (declare-function claude-code-config "claude-code-commands" ())
@@ -335,7 +336,8 @@ INPUT is the terminal output string."
    ["Project & Session"
     ("i" "Init project (/init)" claude-code-init)
     ("k" "Clear conversation (/clear)" claude-code-clear)
-    ("h" "Help (/help)" claude-code-help)]
+    ("h" "Help (/help)" claude-code-help)
+    ("p" "Plan (/plan)" claude-code-plan)]
    ["Memory & Config"
     ("m" "Memory (/memory)" claude-code-memory)
     ("c" "Config (/config)" claude-code-config)

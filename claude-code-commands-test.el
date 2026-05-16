@@ -67,21 +67,23 @@
     (should (member "/compact" sent-commands))
 
     (claude-code-compact "focus on tests")
-    (should (member "/compact focus on tests" sent-commands))))
+    (should (member "/compact focus on tests" sent-commands))
+
+    (claude-code-plan)
+    (should (member "/plan" sent-commands))))
 
 (ert-deftest test-claude-code-key-sending-commands ()
   "Test key sending commands."
   (with-claude-mock-buffer
    (let ((keys-sent nil))
-     ;; Mock vterm functions
+     ;; Mock vterm functions (kbd is left intact so it returns the real
+     ;; control-character strings, matching the test expectations below).
      (cl-letf (((symbol-function 'vterm-send-escape)
                 (lambda () (push 'escape keys-sent)))
                ((symbol-function 'vterm-send-return)
                 (lambda () (push 'return keys-sent)))
                ((symbol-function 'vterm-send-key)
-                (lambda (key &optional shift) (push (list 'key key 'shift shift) keys-sent)))
-               ((symbol-function 'kbd)
-                (lambda (key-string) key-string)))
+                (lambda (key &optional shift) (push (list 'key key 'shift shift) keys-sent))))
 
        (claude-code-send-escape)
        (should (member 'escape keys-sent))
