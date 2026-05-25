@@ -62,6 +62,47 @@ Claude Code can directly interact with your Emacs environment:
 | `C-c RET` | Send Return key |
 | `C-c TAB` | Send Shift+Tab (toggle auto-accept) |
 | `C-c C-t` | Open transient menu |
+| `C-c C-s` | Toggle scroll mode (for fullscreen mode) |
+
+#### In Scroll Mode (`claude-code-vterm-scroll-mode`)
+
+A minor mode for scrolling the [Claude Code fullscreen view](https://code.claude.com/docs/en/fullscreen).
+Toggle on/off with `C-c C-s` while in a Claude Code session.
+
+| Key | Action |
+|-----|--------|
+| `<prior>` (PageUp) | Scroll up one page |
+| `<next>` (PageDown) | Scroll down one page |
+| `S-<up>` (Shift+Up) | Scroll up one line |
+| `S-<down>` (Shift+Down) | Scroll down one line |
+| `C-<end>` | Jump to the bottom |
+| `q` / `C-c C-s` | Exit scroll mode |
+
+##### Required Claude Code keybindings configuration
+
+`S-<up>` / `S-<down>` (line scroll) do **not** work out of the box because
+Claude Code does not bind `shift+up` / `shift+down` to scroll actions by
+default. Add the following to `~/.claude/keybindings.json` so Claude Code
+treats those keys as line-scroll actions in its fullscreen view:
+
+```json
+{
+  "$schema": "https://www.schemastore.org/claude-code-keybindings.json",
+  "$docs": "https://code.claude.com/docs/en/keybindings",
+  "bindings": [
+    {
+      "context": "Scroll",
+      "bindings": {
+        "shift+up": "scroll:lineUp",
+        "shift+down": "scroll:lineDown"
+      }
+    }
+  ]
+}
+```
+
+`<prior>` / `<next>` / `C-<end>` use Claude Code's default bindings and
+need no extra configuration.
 
 #### In Prompt Buffer
 | Key | Action |

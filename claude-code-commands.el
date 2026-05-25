@@ -40,7 +40,9 @@
 ;; vterm function declarations (vterm is loaded by core)
 (declare-function vterm-send-escape "vterm" ())
 (declare-function vterm-send-return "vterm" ())
-(declare-function vterm-send-key "vterm" (key &optional shift))
+(declare-function vterm-send-key "vterm" (key &optional shift meta ctrl accept-proc-output))
+(declare-function vterm-send-prior "vterm" ())
+(declare-function vterm-send-next "vterm" ())
 
 ;; LSP function declarations (optional dependency)
 (declare-function lsp-diagnostics "lsp-mode" (&optional all-workspaces))
@@ -182,6 +184,45 @@
   (claude-code-with-vterm-buffer
    (lambda ()
      (vterm-send-key "<tab>"))))
+
+;;; Scroll key sending functions (for Claude Code fullscreen mode)
+
+;;;###autoload
+(defun claude-code-send-page-up ()
+  "Send Page Up key to Claude Code buffer for scrolling in fullscreen mode."
+  (interactive)
+  (claude-code-with-vterm-buffer #'vterm-send-prior))
+
+;;;###autoload
+(defun claude-code-send-page-down ()
+  "Send Page Down key to Claude Code buffer for scrolling in fullscreen mode."
+  (interactive)
+  (claude-code-with-vterm-buffer #'vterm-send-next))
+
+;;;###autoload
+(defun claude-code-send-line-up ()
+  "Send Shift+Up to scroll up one line in Claude Code fullscreen mode."
+  (interactive)
+  (claude-code-with-vterm-buffer
+   (lambda ()
+     (vterm-send-key "<up>" t))))
+
+;;;###autoload
+(defun claude-code-send-line-down ()
+  "Send Shift+Down to scroll down one line in Claude Code fullscreen mode."
+  (interactive)
+  (claude-code-with-vterm-buffer
+   (lambda ()
+     (vterm-send-key "<down>" t))))
+
+;;;###autoload
+(defun claude-code-send-ctrl-end ()
+  "Send Ctrl+End to jump to the bottom in Claude Code fullscreen mode."
+  (interactive)
+  (claude-code-with-vterm-buffer
+   (lambda ()
+     ;; vterm-send-key: KEY &optional SHIFT META CTRL
+     (vterm-send-key "<end>" nil nil t))))
 
 ;;; Helper functions for command argument handling
 

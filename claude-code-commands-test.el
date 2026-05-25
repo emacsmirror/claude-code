@@ -111,6 +111,40 @@
        (claude-code-send-shift-tab)
        (should (member '(key "<tab>" shift t) keys-sent))))))
 
+(ert-deftest test-claude-code-scroll-key-sending-commands ()
+  "Test scroll key sending commands for fullscreen mode."
+  (with-claude-mock-buffer
+   (let ((keys-sent nil))
+     (cl-letf (((symbol-function 'vterm-send-prior)
+                (lambda () (push 'page-up keys-sent)))
+               ((symbol-function 'vterm-send-next)
+                (lambda () (push 'page-down keys-sent)))
+               ((symbol-function 'vterm-send-key)
+                ;; vterm-send-key signature: (KEY &optional SHIFT META CTRL ...)
+                (lambda (key &optional shift meta ctrl &rest _)
+                  (push (list 'key key 'shift shift 'meta meta 'ctrl ctrl)
+                        keys-sent))))
+
+       ;; Page Up
+       (claude-code-send-page-up)
+       (should (member 'page-up keys-sent))
+
+       ;; Page Down
+       (claude-code-send-page-down)
+       (should (member 'page-down keys-sent))
+
+       ;; Shift+Up (one-line scroll)
+       (claude-code-send-line-up)
+       (should (member '(key "<up>" shift t meta nil ctrl nil) keys-sent))
+
+       ;; Shift+Down (one-line scroll)
+       (claude-code-send-line-down)
+       (should (member '(key "<down>" shift t meta nil ctrl nil) keys-sent))
+
+       ;; Ctrl+End (jump to bottom)
+       (claude-code-send-ctrl-end)
+       (should (member '(key "<end>" shift nil meta nil ctrl t) keys-sent))))))
+
 ;;; Tests for custom project command functions
 
 (ert-deftest test-claude-code-custom-commands-directory ()

@@ -60,6 +60,48 @@ Claude CodeがEmacs環境と直接やり取り：
 | `C-c RET` | Returnキーを送信 |
 | `C-c TAB` | Shift+Tabを送信（自動承認の切り替え） |
 | `C-c C-t` | Transientメニューを開く |
+| `C-c C-s` | スクロールモードのトグル（fullscreen モード用） |
+
+#### スクロールモード内（`claude-code-vterm-scroll-mode`）
+
+[Claude Code の fullscreen 表示](https://code.claude.com/docs/ja/fullscreen) を
+スクロールするための minor mode です。Claude Code セッション内で `C-c C-s`
+で ON/OFF を切り替えできます。
+
+| キー | アクション |
+|-----|--------|
+| `<prior>` (PageUp) | 1ページ上にスクロール |
+| `<next>` (PageDown) | 1ページ下にスクロール |
+| `S-<up>` (Shift+Up) | 1行上にスクロール |
+| `S-<down>` (Shift+Down) | 1行下にスクロール |
+| `C-<end>` | 末尾までジャンプ |
+| `q` / `C-c C-s` | スクロールモードを終了 |
+
+##### 必要な Claude Code 側のキーバインド設定
+
+`S-<up>` / `S-<down>` (1行スクロール) は、Claude Code 側のデフォルト設定では
+`shift+up` / `shift+down` がスクロールアクションに割り当てられていないため、
+**そのままでは動きません**。`~/.claude/keybindings.json` に以下を追加して、
+Claude Code の fullscreen 表示で行スクロールとして扱われるように設定してください:
+
+```json
+{
+  "$schema": "https://www.schemastore.org/claude-code-keybindings.json",
+  "$docs": "https://code.claude.com/docs/ja/keybindings",
+  "bindings": [
+    {
+      "context": "Scroll",
+      "bindings": {
+        "shift+up": "scroll:lineUp",
+        "shift+down": "scroll:lineDown"
+      }
+    }
+  ]
+}
+```
+
+`<prior>` / `<next>` / `C-<end>` は Claude Code のデフォルトキーバインドを
+使うため、追加の設定は不要です。
 
 #### プロンプトバッファ内
 | キー | アクション |

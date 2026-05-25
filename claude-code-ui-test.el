@@ -29,6 +29,36 @@
     ;; Test display settings
     (should (eq display-line-numbers-mode nil))))
 
+(ert-deftest test-claude-code-vterm-scroll-mode-keymap ()
+  "Test that scroll minor mode binds the expected keys."
+  (let ((map claude-code-vterm-scroll-mode-map))
+    (should (eq (lookup-key map (kbd "<prior>"))
+                'claude-code-send-page-up))
+    (should (eq (lookup-key map (kbd "<next>"))
+                'claude-code-send-page-down))
+    (should (eq (lookup-key map (kbd "S-<up>"))
+                'claude-code-send-line-up))
+    (should (eq (lookup-key map (kbd "S-<down>"))
+                'claude-code-send-line-down))
+    (should (eq (lookup-key map (kbd "C-<end>"))
+                'claude-code-send-ctrl-end))
+    ;; Toggle-back keys
+    (should (eq (lookup-key map (kbd "C-c C-s"))
+                'claude-code-vterm-scroll-mode))
+    (should (eq (lookup-key map (kbd "q"))
+                'claude-code-vterm-scroll-mode))))
+
+(ert-deftest test-claude-code-vterm-mode-toggle-scroll-binding ()
+  "Test that vterm mode keymap binds C-c C-s to toggle scroll mode."
+  (should (eq (lookup-key claude-code-vterm-mode-map (kbd "C-c C-s"))
+              'claude-code-vterm-scroll-mode)))
+
+(ert-deftest test-claude-code-vterm-scroll-mode-non-vterm-buffer ()
+  "Test that scroll mode refuses to enable in non-vterm buffers."
+  (with-temp-buffer
+    (should-error (claude-code-vterm-scroll-mode 1) :type 'user-error)
+    (should-not claude-code-vterm-scroll-mode)))
+
 (ert-deftest test-claude-code-vterm-mode-copy-mode-cursor-visibility ()
   "Test that cursor becomes visible when entering vterm-copy-mode.
 By default, `cursor-type' is set to nil in `claude-code-vterm-mode' to

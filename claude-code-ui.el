@@ -60,6 +60,11 @@
 (declare-function claude-code-send-shift-tab "claude-code-commands" ())
 (declare-function claude-code-send-ctrl-t "claude-code-commands" ())
 (declare-function claude-code-send-tab "claude-code-commands" ())
+(declare-function claude-code-send-page-up "claude-code-commands" ())
+(declare-function claude-code-send-page-down "claude-code-commands" ())
+(declare-function claude-code-send-line-up "claude-code-commands" ())
+(declare-function claude-code-send-line-down "claude-code-commands" ())
+(declare-function claude-code-send-ctrl-end "claude-code-commands" ())
 (declare-function claude-code-init "claude-code-commands" ())
 (declare-function claude-code-clear "claude-code-commands" ())
 (declare-function claude-code-help "claude-code-commands" ())
@@ -132,6 +137,7 @@ Minimum value is 0.001 seconds to ensure proper operation."
     (define-key map (kbd "C-c RET") 'claude-code-send-return)
     (define-key map (kbd "C-c TAB") 'claude-code-send-shift-tab)
     (define-key map (kbd "C-c C-t") 'claude-code-transient)
+    (define-key map (kbd "C-c C-s") 'claude-code-vterm-scroll-mode) ; s for scroll
     map)
   "Keymap for `claude-code-vterm-mode'.")
 
@@ -243,6 +249,42 @@ INPUT is the terminal output string."
           (message "Error in Claude Code vterm filter: %s" err)
           ;; Pass through the input even if there's an error to avoid breaking the terminal
           (funcall orig-fun process input)))))))
+
+;;;; Scroll minor mode (for Claude Code fullscreen mode)
+
+(defvar claude-code-vterm-scroll-mode-map
+  (let ((map (make-sparse-keymap)))
+    ;; Page scroll
+    (define-key map (kbd "<prior>") 'claude-code-send-page-up)
+    (define-key map (kbd "<next>") 'claude-code-send-page-down)
+    ;; Line scroll (Shift+arrow)
+    (define-key map (kbd "S-<up>") 'claude-code-send-line-up)
+    (define-key map (kbd "S-<down>") 'claude-code-send-line-down)
+    ;; Jump to bottom
+    (define-key map (kbd "C-<end>") 'claude-code-send-ctrl-end)
+    ;; Toggle back to normal vterm input mode
+    (define-key map (kbd "C-c C-s") 'claude-code-vterm-scroll-mode)
+    (define-key map (kbd "q") 'claude-code-vterm-scroll-mode)
+    map)
+  "Keymap for `claude-code-vterm-scroll-mode'.")
+
+;;;###autoload
+(define-minor-mode claude-code-vterm-scroll-mode
+  "Minor mode for scrolling Claude Code fullscreen output.
+
+When enabled in a `claude-code-vterm-mode' buffer, this mode binds keys
+for scrolling the Claude Code fullscreen view
+\(see https://code.claude.com/docs/en/fullscreen\).
+
+Keybindings:
+\\{claude-code-vterm-scroll-mode-map}"
+  :init-value nil
+  :lighter " CC-Scroll"
+  :keymap claude-code-vterm-scroll-mode-map
+  (unless (derived-mode-p 'vterm-mode)
+    (when claude-code-vterm-scroll-mode
+      (claude-code-vterm-scroll-mode -1)
+      (user-error "claude-code-vterm-scroll-mode is only available in vterm buffers"))))
 
 (defvar claude-code-prompt-mode-map
   (let ((map (make-sparse-keymap)))
