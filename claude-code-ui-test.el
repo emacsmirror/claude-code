@@ -59,6 +59,45 @@
     (should-error (claude-code-vterm-scroll-mode 1) :type 'user-error)
     (should-not claude-code-vterm-scroll-mode)))
 
+(ert-deftest test-claude-code-vterm-scroll-mode-remaps-modeline ()
+  "Test that enabling scroll mode remaps the mode-line face."
+  (skip-unless (fboundp 'vterm-mode))
+  (with-temp-buffer
+    (claude-code-vterm-mode)
+    (let ((claude-code-vterm-scroll-mode-highlight-modeline t))
+      (should-not claude-code--vterm-scroll-mode-face-cookie)
+      (claude-code-vterm-scroll-mode 1)
+      ;; A face-remap cookie should be set when scroll mode is enabled
+      (should claude-code--vterm-scroll-mode-face-cookie)
+      ;; Disabling should clear the cookie
+      (claude-code-vterm-scroll-mode -1)
+      (should-not claude-code--vterm-scroll-mode-face-cookie))))
+
+(ert-deftest test-claude-code-vterm-scroll-mode-respects-highlight-option ()
+  "Test that the mode-line is not remapped when the highlight option is nil."
+  (skip-unless (fboundp 'vterm-mode))
+  (with-temp-buffer
+    (claude-code-vterm-mode)
+    (let ((claude-code-vterm-scroll-mode-highlight-modeline nil))
+      (claude-code-vterm-scroll-mode 1)
+      ;; No cookie should be set when highlighting is disabled
+      (should-not claude-code--vterm-scroll-mode-face-cookie)
+      (claude-code-vterm-scroll-mode -1))))
+
+(ert-deftest test-claude-code-vterm-scroll-mode-lighter-propertized ()
+  "Test that the scroll mode lighter is a propertized string with the lighter face."
+  (should (boundp 'claude-code-vterm-scroll-mode-lighter))
+  (should (stringp claude-code-vterm-scroll-mode-lighter))
+  ;; The lighter string should carry the lighter face in its properties
+  (should (eq (get-text-property 0 'face claude-code-vterm-scroll-mode-lighter)
+              'claude-code-vterm-scroll-mode-lighter-face)))
+
+(ert-deftest test-claude-code-vterm-scroll-mode-lighter-in-minor-mode-alist ()
+  "Test that the lighter is exposed via `minor-mode-alist'."
+  (let ((entry (assq 'claude-code-vterm-scroll-mode minor-mode-alist)))
+    (should entry)
+    (should (eq (cadr entry) 'claude-code-vterm-scroll-mode-lighter))))
+
 (ert-deftest test-claude-code-vterm-mode-copy-mode-cursor-visibility ()
   "Test that cursor becomes visible when entering vterm-copy-mode.
 By default, `cursor-type' is set to nil in `claude-code-vterm-mode' to

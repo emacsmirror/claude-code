@@ -34,6 +34,7 @@
 (require 'markdown-mode)
 
 (declare-function vterm-mode "vterm" ())
+(declare-function face-remap-remove-relative "face-remap" (cookie))
 (defvar vterm-copy-mode)
 
 ;; Forward declarations
@@ -252,6 +253,50 @@ INPUT is the terminal output string."
 
 ;;;; Scroll minor mode (for Claude Code fullscreen mode)
 
+(defface claude-code-vterm-scroll-mode-lighter-face
+  '((((class color) (background dark))
+     :background "DarkOrange3" :foreground "white" :weight bold)
+    (((class color) (background light))
+     :background "DarkOrange" :foreground "black" :weight bold)
+    (t :inverse-video t :weight bold))
+  "Face for the lighter shown in the mode line while scroll mode is active."
+  :group 'claude-code-ui)
+
+(defface claude-code-vterm-scroll-mode-line-face
+  '((((class color) (background dark))
+     :background "DarkOrange3" :foreground "white" :weight bold)
+    (((class color) (background light))
+     :background "DarkOrange" :foreground "black" :weight bold)
+    (t :inverse-video t :weight bold))
+  "Face used to remap the mode line while scroll mode is active.
+
+When `claude-code-vterm-scroll-mode-highlight-modeline' is non-nil
+the entire mode line of the Claude Code buffer takes on this face
+while the mode is active."
+  :group 'claude-code-ui)
+
+(defcustom claude-code-vterm-scroll-mode-highlight-modeline t
+  "Whether to remap the mode line face while scroll mode is active.
+
+When non-nil, the entire mode line of the Claude Code buffer is
+highlighted using `claude-code-vterm-scroll-mode-line-face' so the
+active scroll mode is visually obvious."
+  :type 'boolean
+  :group 'claude-code-ui)
+
+(defvar-local claude-code--vterm-scroll-mode-face-cookie nil
+  "Cookie returned by `face-remap-add-relative' for the mode line.
+
+Used to undo the mode-line face remap when scroll mode is disabled.")
+
+(defvar claude-code-vterm-scroll-mode-lighter
+  (propertize " 📜SCROLL "
+              'face 'claude-code-vterm-scroll-mode-lighter-face)
+  "Lighter shown in the mode line while scroll mode is active.
+
+A propertized string with `claude-code-vterm-scroll-mode-lighter-face'
+so the lighter is visually prominent.")
+
 (defvar claude-code-vterm-scroll-mode-map
   (let ((map (make-sparse-keymap)))
     ;; Page scroll
@@ -279,12 +324,27 @@ for scrolling the Claude Code fullscreen view
 Keybindings:
 \\{claude-code-vterm-scroll-mode-map}"
   :init-value nil
-  :lighter " CC-Scroll"
+  :lighter claude-code-vterm-scroll-mode-lighter
   :keymap claude-code-vterm-scroll-mode-map
-  (unless (derived-mode-p 'vterm-mode)
-    (when claude-code-vterm-scroll-mode
-      (claude-code-vterm-scroll-mode -1)
-      (user-error "claude-code-vterm-scroll-mode is only available in vterm buffers"))))
+  (cond
+   ;; Refuse to enable outside vterm buffers
+   ((and claude-code-vterm-scroll-mode
+         (not (derived-mode-p 'vterm-mode)))
+    (claude-code-vterm-scroll-mode -1)
+    (user-error "claude-code-vterm-scroll-mode is only available in vterm buffers"))
+   ;; Enabling: remap the mode-line face for prominent visual feedback
+   (claude-code-vterm-scroll-mode
+    (when claude-code-vterm-scroll-mode-highlight-modeline
+      (setq claude-code--vterm-scroll-mode-face-cookie
+            (face-remap-add-relative 'mode-line
+                                     'claude-code-vterm-scroll-mode-line-face)))
+    (force-mode-line-update))
+   ;; Disabling: undo the mode-line face remap
+   (t
+    (when claude-code--vterm-scroll-mode-face-cookie
+      (face-remap-remove-relative claude-code--vterm-scroll-mode-face-cookie)
+      (setq claude-code--vterm-scroll-mode-face-cookie nil))
+    (force-mode-line-update))))
 
 (defvar claude-code-prompt-mode-map
   (let ((map (make-sparse-keymap)))
